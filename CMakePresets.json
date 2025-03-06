@@ -5,7 +5,7 @@
       "name": "clang-vcpkg",
       "description": "Use Clang with vcpkg",
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/out/clang",
+      "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
         "CMAKE_C_COMPILER": "clang",
         "CMAKE_CXX_COMPILER": "clang++",
@@ -13,7 +13,8 @@
         "CMAKE_MAKE_PROGRAM": "ninja",
         "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_C_FLAGS_RELEASE": "-Os -ffunction-sections -fdata-sections -flto",
-        "CMAKE_CXX_FLAGS_RELEASE": "-Os -ffunction-sections -fdata-sections -flto"
+        "CMAKE_CXX_FLAGS_RELEASE": "-Os -ffunction-sections -fdata-sections -flto",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
       }
     }
   ],
