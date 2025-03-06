@@ -37,12 +37,11 @@ void render_text(const std::string &text, FT_Face face, hb_font_t *hb_font) {
   hb_glyph_position_t *glyph_pos =
       hb_buffer_get_glyph_positions(buf, &glyph_count);
 
-  float x = 0.0f, y = 200.0f;
+  float pen_x = 50.0f, pen_y = 360.0f;
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glEnable(GL_TEXTURE_2D);
-
   glColor3f(1.0f, 1.0f, 1.0f);
 
   for (unsigned int i = 0; i < glyph_count; i++) {
@@ -52,30 +51,30 @@ void render_text(const std::string &text, FT_Face face, hb_font_t *hb_font) {
       continue;
     }
 
-    GLuint texture = create_texture_from_glyph(face->glyph->bitmap);
+    FT_GlyphSlot glyph = face->glyph;
+    GLuint texture = create_texture_from_glyph(glyph->bitmap);
 
-    float w = face->glyph->bitmap.width;
-    float h = face->glyph->bitmap.rows;
-    float x_offset = face->glyph->bitmap_left + glyph_pos[i].x_offset;
-    float y_offset = face->glyph->bitmap_top + glyph_pos[i].y_offset;
+    float w = glyph->bitmap.width;
+    float h = glyph->bitmap.rows;
+    float xpos = pen_x + glyph->bitmap_left + glyph_pos[i].x_offset / 64.0f;
+    float ypos = pen_y - glyph->bitmap_top - glyph_pos[i].y_offset / 64.0f;
 
     glBindTexture(GL_TEXTURE_2D, texture);
-
     glBegin(GL_QUADS);
-    glTexCoord2f(0, 1);
-    glVertex2f(x + x_offset, y - y_offset);
-    glTexCoord2f(1, 1);
-    glVertex2f(x + x_offset + w, y - y_offset);
-    glTexCoord2f(1, 0);
-    glVertex2f(x + x_offset + w, y - y_offset - h);
     glTexCoord2f(0, 0);
-    glVertex2f(x + x_offset, y - y_offset - h);
+    glVertex2f(xpos, ypos);
+    glTexCoord2f(1, 0);
+    glVertex2f(xpos + w, ypos);
+    glTexCoord2f(1, 1);
+    glVertex2f(xpos + w, ypos + h);
+    glTexCoord2f(0, 1);
+    glVertex2f(xpos, ypos + h);
     glEnd();
 
     glDeleteTextures(1, &texture);
 
-    x += glyph_pos[i].x_advance / 64.0;
-    y += glyph_pos[i].y_advance / 64.0;
+    pen_x += glyph_pos[i].x_advance / 64.0f;
+    pen_y += glyph_pos[i].y_advance / 64.0f;
   }
 
   hb_buffer_destroy(buf);
