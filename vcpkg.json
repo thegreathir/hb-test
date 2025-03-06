@@ -1,5 +1,8 @@
 {
   "dependencies": [
-    "harfbuzz"
+    "harfbuzz",
+    "freetype",
+    "glew",
+    "glfw3"
   ]
 }

@@ -1,44 +1,140 @@
+#include <ft2build.h>
+#include <hb-ft.h>
 #include <hb.h>
 
+#include FT_FREETYPE_H
+
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#include <iostream>
 #include <string>
 
-int main() {
-  const auto text = std::string{"Hello"};
-  hb_buffer_t *buf;
-  buf = hb_buffer_create();
+GLuint create_texture_from_glyph(const FT_Bitmap &bitmap) {
+  GLuint texture;
+  glGenTextures(1, &texture);
+  glBindTexture(GL_TEXTURE_2D, texture);
 
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, bitmap.width, bitmap.rows, 0, GL_RED,
+               GL_UNSIGNED_BYTE, bitmap.buffer);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+  return texture;
+}
+
+void render_text(const std::string &text, FT_Face face, hb_font_t *hb_font) {
+  hb_buffer_t *buf = hb_buffer_create();
   hb_buffer_add_utf8(buf, text.c_str(), text.size(), 0, -1);
-
   hb_buffer_guess_segment_properties(buf);
-
-  hb_blob_t *blob = hb_blob_create_from_file_or_fail("DejaVuSans.ttf");
-  hb_face_t *face = hb_face_create(blob, 0);
-  hb_font_t *font = hb_font_create(face);
-
-  hb_shape(font, buf, nullptr, 0);
+  hb_shape(hb_font, buf, nullptr, 0);
 
   unsigned int glyph_count;
   hb_glyph_info_t *glyph_info = hb_buffer_get_glyph_infos(buf, &glyph_count);
   hb_glyph_position_t *glyph_pos =
       hb_buffer_get_glyph_positions(buf, &glyph_count);
 
-  hb_position_t cursor_x = 0;
-  hb_position_t cursor_y = 0;
+  float x = 0.0f, y = 0.0f;
+
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glEnable(GL_TEXTURE_2D);
+
+  glColor3f(1.0f, 1.0f, 1.0f);
+
   for (unsigned int i = 0; i < glyph_count; i++) {
-    hb_codepoint_t glyphid = glyph_info[i].codepoint;
-    hb_position_t x_offset = glyph_pos[i].x_offset;
-    hb_position_t y_offset = glyph_pos[i].y_offset;
-    hb_position_t x_advance = glyph_pos[i].x_advance;
-    hb_position_t y_advance = glyph_pos[i].y_advance;
-    /* draw_glyph(glyphid, cursor_x + x_offset, cursor_y + y_offset); */
-    cursor_x += x_advance;
-    cursor_y += y_advance;
+    hb_codepoint_t glyph_id = glyph_info[i].codepoint;
+
+    if (FT_Load_Glyph(face, glyph_id, FT_LOAD_RENDER)) {
+      continue;
+    }
+
+    GLuint texture = create_texture_from_glyph(face->glyph->bitmap);
+
+    float w = face->glyph->bitmap.width;
+    float h = face->glyph->bitmap.rows;
+    float x_offset = face->glyph->bitmap_left;
+    float y_offset = face->glyph->bitmap_top;
+
+    glBindTexture(GL_TEXTURE_2D, texture);
+
+    glBegin(GL_QUADS);
+    glTexCoord2f(0, 0);
+    glVertex2f(x + x_offset, y - y_offset);
+    glTexCoord2f(1, 0);
+    glVertex2f(x + x_offset + w, y - y_offset);
+    glTexCoord2f(1, 1);
+    glVertex2f(x + x_offset + w, y - y_offset - h);
+    glTexCoord2f(0, 1);
+    glVertex2f(x + x_offset, y - y_offset - h);
+    glEnd();
+
+    glDeleteTextures(1, &texture);
+
+    x += glyph_pos[i].x_advance / 64.0;
+    y += glyph_pos[i].y_advance / 64.0;
   }
 
   hb_buffer_destroy(buf);
-  hb_font_destroy(font);
-  hb_face_destroy(face);
-  hb_blob_destroy(blob);
+}
+
+int main() {
+  if (!glfwInit()) {
+    std::cerr << "Failed to initialize GLFW\n";
+    return -1;
+  }
+
+  GLFWwindow *window =
+      glfwCreateWindow(800, 600, "Text Rendering", nullptr, nullptr);
+  if (!window) {
+    std::cerr << "Failed to create GLFW window\n";
+    return -1;
+  }
+
+  glfwMakeContextCurrent(window);
+
+  FT_Library ft;
+  if (FT_Init_FreeType(&ft)) {
+    std::cerr << "Failed to initialize FreeType\n";
+    return -1;
+  }
+
+  FT_Face face;
+  if (FT_New_Face(ft, "DejaVuSans.ttf", 0, &face)) {
+    std::cerr << "Failed to load font\n";
+    return -1;
+  }
+
+  FT_Set_Pixel_Sizes(face, 0, 48);
+
+  hb_font_t *hb_font = hb_ft_font_create(face, nullptr);
+
+  while (!glfwWindowShouldClose(window)) {
+    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glViewport(0, 0, 800, 600);
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0, 800, 600, 0, -1, 1);
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+
+    render_text("Hello", face, hb_font);
+
+    glfwSwapBuffers(window);
+    glfwPollEvents();
+  }
+
+  hb_font_destroy(hb_font);
+  FT_Done_Face(face);
+  FT_Done_FreeType(ft);
+
+  glfwDestroyWindow(window);
+  glfwTerminate();
 
   return 0;
 }
