@@ -1,36 +1,44 @@
 #include <hb.h>
-#include <iostream>
 
-// Simple function that prints HarfBuzz version
-void print_hb_version() {
-    std::cout << "HarfBuzz version: " << hb_version_string() << std::endl;
-}
-
-// Function that creates a HarfBuzz font from a file (dummy usage)
-void create_hb_font(const char* font_path) {
-    hb_blob_t* blob = hb_blob_create_from_file(font_path);
-    if (blob) {
-        hb_face_t* face = hb_face_create(blob, 0);  // Create a face from the blob
-        if (face) {
-            hb_font_t* font = hb_font_create(face);  // Create the font from the face
-            hb_face_destroy(face);  // Clean up the face
-            if (font) {
-                std::cout << "Font created successfully!" << std::endl;
-                hb_font_destroy(font);
-            } else {
-                std::cerr << "Failed to create font!" << std::endl;
-            }
-        } else {
-            std::cerr << "Failed to create face!" << std::endl;
-        }
-        hb_blob_destroy(blob);  // Clean up the blob
-    } else {
-        std::cerr << "Failed to load font!" << std::endl;
-    }
-}
+#include <string>
 
 int main() {
-    print_hb_version();
-    create_hb_font("/path/to/font.ttf");  // Replace with a valid font path if needed
-    return 0;
+  const auto text = std::string{"Hello"};
+  hb_buffer_t *buf;
+  buf = hb_buffer_create();
+
+  hb_buffer_add_utf8(buf, text.c_str(), text.size(), 0, -1);
+
+  hb_buffer_guess_segment_properties(buf);
+
+  hb_blob_t *blob = hb_blob_create_from_file_or_fail("DejaVuSans.ttf");
+  hb_face_t *face = hb_face_create(blob, 0);
+  hb_font_t *font = hb_font_create(face);
+
+  hb_shape(font, buf, nullptr, 0);
+
+  unsigned int glyph_count;
+  hb_glyph_info_t *glyph_info = hb_buffer_get_glyph_infos(buf, &glyph_count);
+  hb_glyph_position_t *glyph_pos =
+      hb_buffer_get_glyph_positions(buf, &glyph_count);
+
+  hb_position_t cursor_x = 0;
+  hb_position_t cursor_y = 0;
+  for (unsigned int i = 0; i < glyph_count; i++) {
+    hb_codepoint_t glyphid = glyph_info[i].codepoint;
+    hb_position_t x_offset = glyph_pos[i].x_offset;
+    hb_position_t y_offset = glyph_pos[i].y_offset;
+    hb_position_t x_advance = glyph_pos[i].x_advance;
+    hb_position_t y_advance = glyph_pos[i].y_advance;
+    /* draw_glyph(glyphid, cursor_x + x_offset, cursor_y + y_offset); */
+    cursor_x += x_advance;
+    cursor_y += y_advance;
+  }
+
+  hb_buffer_destroy(buf);
+  hb_font_destroy(font);
+  hb_face_destroy(face);
+  hb_blob_destroy(blob);
+
+  return 0;
 }
