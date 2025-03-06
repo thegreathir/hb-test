@@ -1,0 +1,29 @@
+{
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "clang-vcpkg",
+      "description": "Use Clang with vcpkg",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/clang",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++",
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+        "CMAKE_MAKE_PROGRAM": "ninja"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "clang-vcpkg",
+      "configurePreset": "clang-vcpkg"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "clang-vcpkg",
+      "configurePreset": "clang-vcpkg"
+    }
+  ]
+}
