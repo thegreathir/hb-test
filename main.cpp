@@ -13,9 +13,10 @@ GLuint create_texture_from_glyph(const FT_Bitmap &bitmap) {
   GLuint texture;
   glGenTextures(1, &texture);
   glBindTexture(GL_TEXTURE_2D, texture);
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, bitmap.width, bitmap.rows, 0, GL_RED,
-               GL_UNSIGNED_BYTE, bitmap.buffer);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, bitmap.width, bitmap.rows, 0,
+               GL_ALPHA, GL_UNSIGNED_BYTE, bitmap.buffer);
 
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -36,7 +37,7 @@ void render_text(const std::string &text, FT_Face face, hb_font_t *hb_font) {
   hb_glyph_position_t *glyph_pos =
       hb_buffer_get_glyph_positions(buf, &glyph_count);
 
-  float x = 0.0f, y = 0.0f;
+  float x = 0.0f, y = 100.0f;
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
