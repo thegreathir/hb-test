@@ -37,7 +37,7 @@ void render_text(const std::string &text, FT_Face face, hb_font_t *hb_font) {
   hb_glyph_position_t *glyph_pos =
       hb_buffer_get_glyph_positions(buf, &glyph_count);
 
-  float x = 0.0f, y = 100.0f;
+  float x = 0.0f, y = 200.0f;
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -56,19 +56,19 @@ void render_text(const std::string &text, FT_Face face, hb_font_t *hb_font) {
 
     float w = face->glyph->bitmap.width;
     float h = face->glyph->bitmap.rows;
-    float x_offset = face->glyph->bitmap_left;
-    float y_offset = face->glyph->bitmap_top;
+    float x_offset = face->glyph->bitmap_left + glyph_pos[i].x_offset;
+    float y_offset = face->glyph->bitmap_top + glyph_pos[i].y_offset;
 
     glBindTexture(GL_TEXTURE_2D, texture);
 
     glBegin(GL_QUADS);
-    glTexCoord2f(0, 0);
-    glVertex2f(x + x_offset, y - y_offset);
-    glTexCoord2f(1, 0);
-    glVertex2f(x + x_offset + w, y - y_offset);
-    glTexCoord2f(1, 1);
-    glVertex2f(x + x_offset + w, y - y_offset - h);
     glTexCoord2f(0, 1);
+    glVertex2f(x + x_offset, y - y_offset);
+    glTexCoord2f(1, 1);
+    glVertex2f(x + x_offset + w, y - y_offset);
+    glTexCoord2f(1, 0);
+    glVertex2f(x + x_offset + w, y - y_offset - h);
+    glTexCoord2f(0, 0);
     glVertex2f(x + x_offset, y - y_offset - h);
     glEnd();
 
@@ -88,7 +88,7 @@ int main() {
   }
 
   GLFWwindow *window =
-      glfwCreateWindow(800, 600, "Text Rendering", nullptr, nullptr);
+      glfwCreateWindow(1280, 720, "Text Rendering", nullptr, nullptr);
   if (!window) {
     std::cerr << "Failed to create GLFW window\n";
     return -1;
@@ -115,16 +115,16 @@ int main() {
   while (!glfwWindowShouldClose(window)) {
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
-    glViewport(0, 0, 800, 600);
+    glViewport(0, 0, 1280, 720);
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glOrtho(0, 800, 600, 0, -1, 1);
+    glOrtho(0, 1280, 720, 0, -1, 1);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    render_text("Hello", face, hb_font);
+    render_text("quick brown fox jumps over the lazy dog", face, hb_font);
 
     glfwSwapBuffers(window);
     glfwPollEvents();
