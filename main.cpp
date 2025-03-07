@@ -1,8 +1,7 @@
 #include <ft2build.h>
+#include FT_FREETYPE_H
 #include <hb-ft.h>
 #include <hb.h>
-
-#include FT_FREETYPE_H
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -46,7 +45,6 @@ void render_text(const std::string &text, FT_Face face, hb_font_t *hb_font) {
 
   for (unsigned int i = 0; i < glyph_count; i++) {
     hb_codepoint_t glyph_id = glyph_info[i].codepoint;
-
     if (FT_Load_Glyph(face, glyph_id, FT_LOAD_RENDER)) {
       continue;
     }
@@ -54,8 +52,8 @@ void render_text(const std::string &text, FT_Face face, hb_font_t *hb_font) {
     FT_GlyphSlot glyph = face->glyph;
     GLuint texture = create_texture_from_glyph(glyph->bitmap);
 
-    float w = glyph->bitmap.width;
-    float h = glyph->bitmap.rows;
+    float w = static_cast<float>(glyph->bitmap.width);
+    float h = static_cast<float>(glyph->bitmap.rows);
     float xpos = pen_x + glyph->bitmap_left + glyph_pos[i].x_offset / 64.0f;
     float ypos = pen_y - glyph->bitmap_top - glyph_pos[i].y_offset / 64.0f;
 
@@ -76,7 +74,6 @@ void render_text(const std::string &text, FT_Face face, hb_font_t *hb_font) {
     pen_x += glyph_pos[i].x_advance / 64.0f;
     pen_y += glyph_pos[i].y_advance / 64.0f;
   }
-
   hb_buffer_destroy(buf);
 }
 
@@ -90,10 +87,15 @@ int main() {
       glfwCreateWindow(1280, 720, "Text Rendering", nullptr, nullptr);
   if (!window) {
     std::cerr << "Failed to create GLFW window\n";
+    glfwTerminate();
     return -1;
   }
-
   glfwMakeContextCurrent(window);
+
+  if (glewInit() != GLEW_OK) {
+    std::cerr << "Failed to initialize GLEW\n";
+    return -1;
+  }
 
   FT_Library ft;
   if (FT_Init_FreeType(&ft)) {
@@ -106,7 +108,6 @@ int main() {
     std::cerr << "Failed to load font\n";
     return -1;
   }
-
   FT_Set_Pixel_Sizes(face, 0, 48);
 
   hb_font_t *hb_font = hb_ft_font_create(face, nullptr);
@@ -114,12 +115,13 @@ int main() {
   while (!glfwWindowShouldClose(window)) {
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
-    glViewport(0, 0, 1280, 720);
+    int width, height;
+    glfwGetFramebufferSize(window, &width, &height);
+    glViewport(0, 0, width, height);
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glOrtho(0, 1280, 720, 0, -1, 1);
-
+    glOrtho(0, width, height, 0, -1, 1);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
@@ -132,9 +134,7 @@ int main() {
   hb_font_destroy(hb_font);
   FT_Done_Face(face);
   FT_Done_FreeType(ft);
-
   glfwDestroyWindow(window);
   glfwTerminate();
-
   return 0;
 }
