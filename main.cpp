@@ -125,7 +125,8 @@ int main() {
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    render_text("quick brown fox jumps over the lazy dog", face, hb_font);
+    const auto text = "به نام خداوند رنگین کمان";
+    render_text(text, face, hb_font);
 
     glfwSwapBuffers(window);
     glfwPollEvents();
