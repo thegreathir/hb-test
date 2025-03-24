@@ -2,7 +2,19 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "hb",
+            "name": "hb-mac",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/hb",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/assets",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "lldb",
+        },
+        {
+            "name": "hb-win",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/hb.exe",
