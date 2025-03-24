@@ -9,3 +9,4 @@ find_package(glfw3 CONFIG REQUIRED)
 add_executable(hb main.cpp)
 
 target_link_libraries(hb harfbuzz::harfbuzz Freetype::Freetype GLEW::GLEW glfw)
+target_compile_features(hb PUBLIC cxx_std_20)
